@@ -253,14 +253,14 @@ namespace Microsoft.Framework.Runtime.DependencyManagement
         private IPackageFile ReadPackageFile(string property, JToken json)
         {
             var file = new LockFilePackageFile();
-            file.Path = property;
+            file.Path = PathUtility.GetPathWithDirectorySeparator(property);
             return file;
         }
 
         private JProperty WritePackageFile(IPackageFile item)
         {
             var json = new JObject();
-            return new JProperty(item.Path, new JObject());
+            return new JProperty(PathUtility.GetPathWithForwardSlashes(item.Path), new JObject());
         }
 
         private IList<TItem> ReadArray<TItem>(JArray json, Func<JToken, TItem> readItem)

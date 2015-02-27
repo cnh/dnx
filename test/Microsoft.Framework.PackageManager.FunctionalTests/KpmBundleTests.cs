@@ -1032,12 +1032,12 @@ exec ""{2}{3}"" --appbase ""${0}"" Microsoft.Framework.ApplicationHost {4} ""$@"
         ""HelloWorld.1.0.0.nupkg"": {},
         ""HelloWorld.1.0.0.nupkg.sha512"": {},
         ""HelloWorld.nuspec"": {},
-        ""app\\hello.cmd"": {},
-        ""app\\hello.sh"": {},
-        ""app\\project.json"": {},
-        ""lib\\dnx451\\HelloWorld.dll"": {},
-        ""lib\\dnx451\\HelloWorld.xml"": {},
-        ""root\\project.json"": {}
+        ""app/hello.cmd"": {},
+        ""app/hello.sh"": {},
+        ""app/project.json"": {},
+        ""lib/dnx451/HelloWorld.dll"": {},
+        ""lib/dnx451/HelloWorld.xml"": {},
+        ""root/project.json"": {}
       }
     }
   }
@@ -1049,6 +1049,12 @@ exec ""{2}{3}"" --appbase ""${0}"" Microsoft.Framework.ApplicationHost {4} ""$@"
                 var bundleOutputPath = Path.Combine(tempDir, "output");
                 var helloWorldAppPath = Path.Combine(tempDir, "HelloWorld");
                 TestUtils.CopyFolder(TestUtils.GetXreTestAppPath("HelloWorld"), helloWorldAppPath);
+
+                var lockFilePath = Path.Combine(helloWorldAppPath, "project.lock.json");
+                if (File.Exists(lockFilePath))
+                {
+                    File.Delete(lockFilePath);
+                }
 
                 var exitCode = KpmTestUtils.ExecKpm(
                     runtimeHomeDir,
@@ -1118,13 +1124,13 @@ exec ""{2}{3}"" --appbase ""${0}"" Microsoft.Framework.ApplicationHost {4} ""$@"
         ""HelloWorld.1.0.0.nupkg"": {},
         ""HelloWorld.1.0.0.nupkg.sha512"": {},
         ""HelloWorld.nuspec"": {},
-        ""app\\hello.cmd"": {},
-        ""app\\hello.sh"": {},
-        ""app\\project.json"": {},
-        ""lib\\dnx451\\HelloWorld.dll"": {},
-        ""lib\\dnx451\\HelloWorld.xml"": {},
-        ""root\\project.json"": {},
-        ""root\\project.lock.json"": {}
+        ""app/hello.cmd"": {},
+        ""app/hello.sh"": {},
+        ""app/project.json"": {},
+        ""lib/dnx451/HelloWorld.dll"": {},
+        ""lib/dnx451/HelloWorld.xml"": {},
+        ""root/project.json"": {},
+        ""root/project.lock.json"": {}
       }
     }
   }
