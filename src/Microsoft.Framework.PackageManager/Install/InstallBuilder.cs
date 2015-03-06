@@ -14,8 +14,6 @@ namespace Microsoft.Framework.PackageManager
     {
         public const string CommandsFolderName = "app";
 
-
-
         private readonly Runtime.Project _project;
         private readonly IPackageBuilder _packageBuilder;
         private readonly Reports _buildReport;
