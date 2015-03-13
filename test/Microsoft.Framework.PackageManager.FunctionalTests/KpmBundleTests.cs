@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Framework.FunctionalTestUtils;
 using Microsoft.Framework.Runtime;
+using Microsoft.Framework.Runtime.DependencyManagement;
 using Xunit;
 
 namespace Microsoft.Framework.PackageManager
@@ -1061,7 +1062,7 @@ exec ""{2}{3}"" --appbase ""${0}"" Microsoft.Framework.ApplicationHost {4} ""$@"
                 var appPath = Path.Combine(tempDir, testApp);
                 TestUtils.CopyFolder(TestUtils.GetXreTestAppPath(testApp), appPath);
 
-                var lockFilePath = Path.Combine(appPath, "project.lock.json");
+                var lockFilePath = Path.Combine(appPath, LockFileFormat.LockFileName);
                 if (File.Exists(lockFilePath))
                 {
                     File.Delete(lockFilePath);
