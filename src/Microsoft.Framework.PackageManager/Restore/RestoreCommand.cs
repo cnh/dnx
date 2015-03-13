@@ -30,6 +30,7 @@ namespace Microsoft.Framework.PackageManager
             FileSystem = new PhysicalFileSystem(Directory.GetCurrentDirectory());
             MachineWideSettings = new CommandLineMachineWideSettings();
             ScriptExecutor = new ScriptExecutor();
+            FailedPackages = new Dictionary<string, List<string>>();
         }
 
         public FeedOptions FeedOptions { get; set; }
@@ -54,6 +55,7 @@ namespace Microsoft.Framework.PackageManager
         public IMachineWideSettings MachineWideSettings { get; set; }
         public IFileSystem FileSystem { get; set; }
         public Reports Reports { get; set; }
+        private Dictionary<string, List<string>> FailedPackages { get; set; }
 
         protected internal ISettings Settings { get; set; }
         protected internal IPackageSourceProvider SourceProvider { get; set; }
@@ -142,6 +144,15 @@ namespace Microsoft.Framework.PackageManager
                     Reports.Information.WriteLine(string.Format("Total time {0}ms", sw.ElapsedMilliseconds));
                 }
 
+                foreach(var json in FailedPackages)
+                {
+                    Reports.Error.WriteLine("Errors in {0}".Red().Bold(), json.Key);
+                    foreach(var error in json.Value)
+                    {
+                        Reports.Error.WriteLine("    {0}", error);
+                    }
+                }
+
                 return restoreCount == successCount;
             }
             catch (Exception ex)
@@ -209,7 +220,9 @@ namespace Microsoft.Framework.PackageManager
 
                 if (package == null)
                 {
-                    Reports.Error.WriteLine("Unable to locate the package {0}".Red(), RestorePackageId);
+                    var errorMessage = string.Format("Unable to locate the package {0}".Red(), RestorePackageId);
+                    FailedPackages.GetOrAdd("Restore", _ => new List<string>()).Add(errorMessage);
+                    Reports.Error.WriteLine(errorMessage);
                     return false;
                 }
                 RestorePackageVersion = package.Version.ToString();
@@ -243,7 +256,9 @@ namespace Microsoft.Framework.PackageManager
                          node.LibraryRange.VersionRange != null &&
                          missingItems.Add(node.LibraryRange))
                     {
-                        Reports.Error.WriteLine(string.Format("Unable to locate {0} >= {1}", node.LibraryRange.Name.Red().Bold(), node.LibraryRange.VersionRange));
+                        var errorMessage = string.Format("Unable to locate {0} >= {1}", node.LibraryRange.Name.Red().Bold(), node.LibraryRange.VersionRange);
+                        FailedPackages.GetOrAdd("Restore", _ => new List<string>()).Add(errorMessage);
+                        Reports.Error.WriteLine(errorMessage);
                         success = false;
                     }
                     return;
@@ -253,11 +268,13 @@ namespace Microsoft.Framework.PackageManager
                 {
                     if (missingItems.Add(node.LibraryRange))
                     {
-                        Reports.Error.WriteLine(
+                        var errorMessage = string.Format(
                             "Unable to locate {0} >= {1}. Do you mean {2}?",
                             node.LibraryRange.Name.Red().Bold(),
                             node.LibraryRange.VersionRange,
                             node.Item.Match.Library.Name.Bold());
+                        FailedPackages.GetOrAdd("Restore", _ => new List<string>()).Add(errorMessage);
+                        Reports.Error.WriteLine(errorMessage);
                         success = false;
                     }
                     return;
@@ -513,7 +530,9 @@ namespace Microsoft.Framework.PackageManager
                          node.LibraryRange.VersionRange != null &&
                          missingItems.Add(node.LibraryRange))
                     {
-                        Reports.Error.WriteLine(string.Format("Unable to locate {0} {1}", node.LibraryRange.Name.Red().Bold(), node.LibraryRange.VersionRange));
+                        var errorMessage = string.Format("Unable to locate {0} {1}", node.LibraryRange.Name.Red().Bold(), node.LibraryRange.VersionRange);
+                        FailedPackages.GetOrAdd(projectJsonPath, _ => new List<string>()).Add(errorMessage);
+                        Reports.Error.WriteLine(errorMessage);
                         success = false;
                     }
 
@@ -525,9 +544,10 @@ namespace Microsoft.Framework.PackageManager
                 {
                     if (missingItems.Add(node.LibraryRange))
                     {
-                        Reports.Error.WriteLine("Unable to locate {0} {1}. Do you mean {2}?",
+                        var errorMessage = string.Format("Unable to locate {0} {1}. Do you mean {2}?",
                             node.LibraryRange.Name.Red().Bold(), node.LibraryRange.VersionRange, node.Item.Match.Library.Name.Bold());
-
+                        FailedPackages.GetOrAdd(projectJsonPath, _ => new List<string>()).Add(errorMessage);
+                        Reports.Error.WriteLine(errorMessage);
                         success = false;
                     }
 
