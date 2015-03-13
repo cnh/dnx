@@ -1014,12 +1014,7 @@ exec ""{2}{3}"" --appbase ""${0}"" Microsoft.Framework.ApplicationHost {4} ""$@"
   ""locked"": false,
   ""version"": -10000,
   ""projectFileDependencyGroups"": {
-    ""DNX,Version=v4.5.1"": [
-      ""framework/mscorlib "",
-      ""framework/System "",
-      ""framework/System.Core "",
-      ""framework/Microsoft.CSharp ""
-    ],
+    ""DNX,Version=v4.5.1"": [],
     """": [
       ""NoDependencies >= 1.0.0""
     ]
@@ -1065,6 +1060,12 @@ exec ""{2}{3}"" --appbase ""${0}"" Microsoft.Framework.ApplicationHost {4} ""$@"
                 var bundleOutputPath = Path.Combine(tempDir, "output");
                 var appPath = Path.Combine(tempDir, testApp);
                 TestUtils.CopyFolder(TestUtils.GetXreTestAppPath(testApp), appPath);
+
+                var lockFilePath = Path.Combine(appPath, "project.lock.json");
+                if (File.Exists(lockFilePath))
+                {
+                    File.Delete(lockFilePath);
+                }
 
                 var exitCode = KpmTestUtils.ExecKpm(
                     runtimeHomeDir,
