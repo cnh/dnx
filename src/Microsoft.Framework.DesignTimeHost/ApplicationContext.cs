@@ -31,6 +31,8 @@ namespace Microsoft.Framework.DesignTimeHost
 
         private readonly Trigger<string> _appPath = new Trigger<string>();
         private readonly Trigger<string> _configuration = new Trigger<string>();
+        private readonly Trigger<Void> _pluginRegistration = new Trigger<Void>();
+        private readonly Trigger<Void> _pluginWorkNeeded = new Trigger<Void>();
         private readonly Trigger<Void> _filesChanged = new Trigger<Void>();
         private readonly Trigger<Void> _rebuild = new Trigger<Void>();
         private readonly Trigger<Void> _restoreComplete = new Trigger<Void>();
@@ -165,6 +167,11 @@ namespace Microsoft.Framework.DesignTimeHost
                 }
 
                 if (PerformCompilation())
+                {
+                    SendOutgoingMessages();
+                }
+
+                if (PerformPluginWork())
                 {
                     SendOutgoingMessages();
                 }
@@ -304,20 +311,19 @@ namespace Microsoft.Framework.DesignTimeHost
                     break;
                 case "Plugin":
                     {
-                        var pluginData = message.Payload.ToObject<PluginMessage>();
+                        var pluginMessage = message.Payload.ToObject<PluginMessage>();
 
-                        Project project;
-                        if (!Project.TryGetProject(_appPath.Value, out project))
+                        var result = _pluginHandler.OnReceive(pluginMessage);
+
+                        switch (result)
                         {
-                            throw new InvalidOperationException(
-                                Resources.FormatPlugin_UnableToFindProjectJson(_appPath.Value));
+                            case PluginMessageResult.PluginRegistration:
+                                _pluginRegistration.Value = default(Void);
+                                break;
+                            case PluginMessageResult.Message:
+                                _pluginWorkNeeded.Value = default(Void);
+                                break;
                         }
-
-                        var loadContextFactory = GetRuntimeLoadContextFactory(project);
-
-                        var assemblyLoadContext = loadContextFactory.Create();
-
-                        _pluginHandler.ProcessMessage(pluginData, assemblyLoadContext);
                     }
                     break;
             }
@@ -334,7 +340,8 @@ namespace Microsoft.Framework.DesignTimeHost
                 _filesChanged.WasAssigned ||
                 _rebuild.WasAssigned ||
                 _restoreComplete.WasAssigned ||
-                _sourceTextChanged.WasAssigned)
+                _sourceTextChanged.WasAssigned ||
+                _pluginRegistration.WasAssigned)
             {
                 bool triggerBuildOutputs = _rebuild.WasAssigned || _filesChanged.WasAssigned;
                 bool triggerDependencies = _restoreComplete.WasAssigned || _rebuild.WasAssigned;
@@ -488,6 +495,34 @@ namespace Microsoft.Framework.DesignTimeHost
             }
 
             return true;
+        }
+
+        private bool PerformPluginWork()
+        {
+            if (_pluginRegistration.WasAssigned ||
+                _pluginWorkNeeded.WasAssigned ||
+                _filesChanged.WasAssigned ||
+                _rebuild.WasAssigned ||
+                _restoreComplete.WasAssigned ||
+                _sourceTextChanged.WasAssigned)
+            {
+                Project project;
+                if (!Project.TryGetProject(_appPath.Value, out project))
+                {
+                    throw new InvalidOperationException(
+                        Resources.FormatPlugin_UnableToFindProjectJson(_appPath.Value));
+                }
+
+                var loadContextFactory = GetRuntimeLoadContextFactory(project);
+
+                var assemblyLoadContext = loadContextFactory.Create();
+
+                _pluginHandler.Process(assemblyLoadContext);
+
+                return true;
+            }
+
+            return false;
         }
 
         private bool UpdateProjectCompilation(ProjectWorld project, out ProjectCompilation compilation)
